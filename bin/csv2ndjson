@@ -9,7 +9,12 @@ import getopt
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-(optlist, args) = getopt.getopt(sys.argv[1:], 'Htd:')
+USAGE='''Usage: csv2ndjson [OPTION]... [FILE]...
+Concatenate FILE(s) to standard output.
+
+With no FILE, or when FILE is -, read standard input.'''
+
+(optlist, args) = getopt.getopt(sys.argv[1:], 'hHtd:')
 
 use_header = True
 delim = ','
@@ -21,28 +26,27 @@ for o, a in optlist:
         delim = a
     elif o == '-t':
         delim = '\t'
+    elif o == '-h':
+        eprint(USAGE)
+        sys.exit(0)
 
-if len(args) != 1:
-    eprint("USAGE: " + sys.argv[0] + " <csv-file>")
-    sys.exit(1)
+files = [sys.stdin] if (len(args) == 0 or (len(args) == 1 and args[0] == '-')) else args
 
-file = args[0]
-
-# simple loop to print out ndjson of csv file assuming header line.
-# allows filtering of columns by supplying them as trailing args
 
 #TODO allow for no header, or multiline header
-with open(file, newline = '', encoding="utf-8-sig") as infile:
-    reader = csv.reader(infile, delimiter=delim, quotechar='"')
-    if use_header:
-        header = next(reader)
-        fields = header #TODO implement filter: if len(sys.argv) == 2 else sys.argv[2:]
-    else:
-        header = False
-
-    for row in reader:
-        if header:
-            d = dict(zip(header, row))
-            print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
+for f in files:
+    with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
+        reader = csv.reader(infile, delimiter=delim, quotechar='"')
+        if use_header:
+            header = next(reader)
+            fields = header #TODO implement filter: if len(sys.argv) == 2 else sys.argv[2:]
         else:
-            print(json.dumps(row))
+            header = False
+
+        # simple loop to print out ndjson of csv file assuming header line.
+        for row in reader:
+            if header:
+                d = dict(zip(header, row))
+                print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
+            else:
+                print(json.dumps(row))
