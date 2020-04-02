@@ -10,7 +10,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 USAGE='''Usage: csv2ndjson [OPTION]... [FILE]...
-Concatenate FILE(s) to standard output.
+Translate FILE(s) from csv to ndjson and output to standard output.
 
 With no FILE, or when FILE is -, read standard input.'''
 
