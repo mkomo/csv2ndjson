@@ -12,7 +12,14 @@ def eprint(*args, **kwargs):
 USAGE='''Usage: csv2ndjson [OPTION]... [FILE]...
 Translate FILE(s) from csv to ndjson and output to standard output.
 
-With no FILE, or when FILE is -, read standard input.'''
+With no FILE, or when FILE is -, read standard input.
+
+  -H                Do not use header row to construct json objects (prints json arrays)
+  -t                Input is tab-delimited
+  -d <delimiter>    Input is delimited by <delimiter>
+  -i                Include empty fields
+  -h                Print this help message
+'''
 
 (optlist, args) = getopt.getopt(sys.argv[1:], 'hHtid:')
 
@@ -53,6 +60,6 @@ for f in files:
                 if include_empty:
                     print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
                 else:
-                    print(json.dumps(dict(zip(fields, [d[f] for f in fields if len(d[f]) > 0]))))
+                    print(json.dumps(dict([(f, d[f]) for f in fields if len(d[f]) > 0])))
             else:
                 print(json.dumps(row))
