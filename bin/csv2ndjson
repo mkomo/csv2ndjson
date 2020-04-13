@@ -14,16 +14,19 @@ Translate FILE(s) from csv to ndjson and output to standard output.
 
 With no FILE, or when FILE is -, read standard input.'''
 
-(optlist, args) = getopt.getopt(sys.argv[1:], 'hHtd:')
+(optlist, args) = getopt.getopt(sys.argv[1:], 'hHtid:')
 
 use_header = True
 delim = ','
+include_empty = False
 
 for o, a in optlist:
     if o == "-H":
         use_header = False
     elif o == '-d':
         delim = a
+    elif o == '-i':
+        include_empty = True
     elif o == '-t':
         delim = '\t'
     elif o == '-h':
@@ -47,6 +50,9 @@ for f in files:
         for row in reader:
             if header:
                 d = dict(zip(header, row))
-                print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
+                if include_empty:
+                    print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
+                else:
+                    print(json.dumps(dict(zip(fields, [d[f] for f in fields if len(d[f]) > 0]))))
             else:
                 print(json.dumps(row))
