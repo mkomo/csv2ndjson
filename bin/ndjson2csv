@@ -12,18 +12,26 @@ def eprint(*args, **kwargs):
 USAGE='''Usage: ndjson2csv [OPTION]... [FILE]...
 Translate FILE(s) from ndjson to csv and output to standard output.
 
-With no FILE, or when FILE is -, read standard input.'''
+With no FILE, or when FILE is -, read standard input.
 
-(optlist, args) = getopt.getopt(sys.argv[1:], 'htd:')
+  -h              show this message
+  -t              fields in output will be tab separated
+  -d DELIM        fields in output will be separated by DELIM
+  -c [FIELD],...  include only these fields (in the given order)'''
+
+(optlist, args) = getopt.getopt(sys.argv[1:], 'htc:d:', ["help", "columns=", "delimiter="])
 
 delim = ','
+columns_to_output = []
 
 for o, a in optlist:
-    if o == '-d':
+    if o in ('-d', '--delimiter'):
         delim = a
     elif o == '-t':
         delim = '\t'
-    elif o == '-h':
+    elif o in ('-c', '--columns'):
+        columns_to_output = a.split(',')
+    elif o in ('-h', '--help'):
         eprint(USAGE)
         sys.exit(0)
 
@@ -35,14 +43,29 @@ files = [sys.stdin] if (len(args) == 0 or (len(args) == 1 and args[0] == '-')) e
 columns = set()
 data = list()
 
-for f in files:
-    with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
-        for row in infile:
-            rowData = json.loads(row)
-            data.append(rowData)
-            columns.update(rowData.keys())
+try:
+    output = csv.writer(sys.stdout, delimiter=delim)
+    if len(columns_to_output) > 0:
+        output.writerow(columns_to_output)
 
-output = csv.writer(sys.stdout, delimiter=delim)
-output.writerow(columns)
-for row in data:
-    output.writerow([(row[col] if col in row else '') for col in columns])
+    for f in files:
+        with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
+            for row in infile:
+                rowData = json.loads(row)
+                if len(columns_to_output) > 0:
+                    output.writerow([(rowData[col] if col in rowData else '') for col in columns_to_output])
+                else:
+                    data.append(rowData)
+                    columns.update(rowData.keys())
+
+    if len(columns_to_output) > 0:
+        sys.exit(0)
+
+    columns_to_output = list(columns)
+    columns_to_output.sort()
+
+    output.writerow(columns_to_output)
+    for rowData in data:
+        output.writerow([(rowData[col] if col in rowData else '') for col in columns_to_output])
+except BrokenPipeError:
+  sys.exit(32)
