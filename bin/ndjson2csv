@@ -68,4 +68,8 @@ try:
     for rowData in data:
         output.writerow([(rowData[col] if col in rowData else '') for col in columns_to_output])
 except BrokenPipeError:
-  sys.exit(32)
+    sys.stderr.close()
+    sys.exit(32)
+except KeyboardInterrupt:
+    sys.stderr.close()
+    sys.exit(130)

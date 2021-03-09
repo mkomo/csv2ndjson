@@ -65,4 +65,8 @@ try:
                 else:
                     print(json.dumps(row))
 except BrokenPipeError:
-  sys.exit(32)
+    sys.stderr.close()
+    sys.exit(32)
+except KeyboardInterrupt:
+    sys.stderr.close()
+    sys.exit(130)
