@@ -43,23 +43,26 @@ for o, a in optlist:
 files = [sys.stdin] if (len(args) == 0 or (len(args) == 1 and args[0] == '-')) else args
 
 
-#TODO allow for no header, or multiline header
-for f in files:
-    with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
-        reader = csv.reader(infile, delimiter=delim, quotechar='"')
-        if use_header:
-            header = next(reader)
-            fields = header #TODO implement filter: if len(sys.argv) == 2 else sys.argv[2:]
-        else:
-            header = False
-
-        # simple loop to print out ndjson of csv file assuming header line.
-        for row in reader:
-            if header:
-                d = dict(zip(header, row))
-                if include_empty:
-                    print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
-                else:
-                    print(json.dumps(dict([(f, d[f]) for f in fields if len(d[f]) > 0])))
+try:
+    #TODO allow for no header, or multiline header
+    for f in files:
+        with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
+            reader = csv.reader(infile, delimiter=delim, quotechar='"')
+            if use_header:
+                header = next(reader)
+                fields = header #TODO implement filter: if len(sys.argv) == 2 else sys.argv[2:]
             else:
-                print(json.dumps(row))
+                header = False
+
+            # simple loop to print out ndjson of csv file assuming header line.
+            for row in reader:
+                if header:
+                    d = dict(zip(header, row))
+                    if include_empty:
+                        print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
+                    else:
+                        print(json.dumps(dict([(f, d[f]) for f in fields if len(d[f]) > 0])))
+                else:
+                    print(json.dumps(row))
+except BrokenPipeError:
+  sys.exit(32)
