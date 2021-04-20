@@ -17,15 +17,17 @@ With no FILE, or when FILE is -, read standard input.
   -H                Do not use header row to construct json objects (prints json arrays)
   -t                Input is tab-delimited
   -d <delimiter>    Input is delimited by <delimiter>
-  -i                Include empty fields
+  -i                Include empty columns
   -h                Print this help message
+  -c [COLUMN],...  include only these columns
 '''
 
-(optlist, args) = getopt.getopt(sys.argv[1:], 'hHtid:')
+(optlist, args) = getopt.getopt(sys.argv[1:], 'hHtic:d:')
 
 use_header = True
 delim = ','
 include_empty = False
+columns_to_output = []
 
 for o, a in optlist:
     if o == "-H":
@@ -36,6 +38,8 @@ for o, a in optlist:
         include_empty = True
     elif o == '-t':
         delim = '\t'
+    elif o in ('-c', '--columns'):
+        columns_to_output = a.split(',')
     elif o == '-h':
         eprint(USAGE)
         sys.exit(0)
@@ -44,19 +48,22 @@ files = [sys.stdin] if (len(args) == 0 or (len(args) == 1 and args[0] == '-')) e
 
 
 try:
-    #TODO allow for no header, or multiline header
+    #TODO allow for multiline header
     for f in files:
         with (open(f, newline = '', encoding="utf-8-sig") if f != sys.stdin else f) as infile:
             reader = csv.reader(infile, delimiter=delim, quotechar='"')
-            if use_header:
+            if len(columns_to_output) > 0:
                 header = next(reader)
-                fields = header #TODO implement filter: if len(sys.argv) == 2 else sys.argv[2:]
+                fields = columns_to_output
+            elif use_header:
+                header = next(reader)
+                fields = header
             else:
-                header = False
+                fields = False
 
             # simple loop to print out ndjson of csv file assuming header line.
             for row in reader:
-                if header:
+                if fields:
                     d = dict(zip(header, row))
                     if include_empty:
                         print(json.dumps(dict(zip(fields, [d[f] for f in fields]))))
